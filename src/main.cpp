@@ -1,4 +1,168 @@
 #include "main.h"
+#include "lemlib/api.hpp"
+
+/*
+	MOTOR PORT DEFINITIONS
+*/
+
+#define CATA_MOTOR_PORT 2
+#define INTAKE_MOTOR_PORT 12
+
+#define DRIVE_LB_PORT 6
+#define DRIVE_LM_PORT 7
+#define DRIVE_LF_PORT 8
+
+#define DRIVE_RB_PORT 3
+#define DRIVE_RM_PORT 4
+#define DRIVE_RF_PORT 5
+
+/*
+	IMU PORT DEFINITIONS
+*/
+
+#define IMU_PORT 18
+
+/*
+	DIGITAL PORT DEFINITIONS
+*/
+
+#define CATA_LIMIT_SWITCH_PORT 'H'
+#define AUTON_POT_PORT 'E'
+#define INTAKE_ACTUATOR_PORT 'G'
+#define WINGS_ACTUATOR_PORT 'F'
+
+/*
+	CONTROLLER BUTTON DEFINITIONS
+*/
+
+#define AUTON_SELECT_BUTTON pros::E_CONTROLLER_DIGITAL_UP
+
+#define CATA_LAUNCH_ONCE_BUTTON pros::E_CONTROLLER_DIGITAL_R1
+#define INTAKE_INTAKE_BUTTON pros::E_CONTROLLER_DIGITAL_L1
+#define INTAKE_OUTTAKE_BUTTON pros::E_CONTROLLER_DIGITAL_L2
+
+#define ACTUATE_INTAKE_BUTTON pros::E_CONTROLLER_DIGITAL_X
+#define ACTUATE_WINGS_BUTTON pros::E_CONTROLLER_DIGITAL_A
+
+#define UP_MATCH_LOAD_SPEED_BUTTON pros::E_CONTROLLER_DIGITAL_LEFT
+#define DOWN_MATCH_LOAD_SPEED_BUTTON pros::E_CONTROLLER_DIGITAL_DOWN
+
+/*
+	CONTROLLER DEFINITION
+*/
+
+pros::Controller controller (pros::E_CONTROLLER_MASTER);
+
+/*
+	MOTOR INITIALIZATIONS
+*/
+
+pros::Motor Catapult(CATA_MOTOR_PORT, MOTOR_GEARSET_36, true);
+pros::Motor Intake(INTAKE_MOTOR_PORT, MOTOR_GEARSET_6, true);
+
+/*
+	SENSOR INITIALIZATIONS
+*/
+
+pros::ADIDigitalIn CataLimit(CATA_LIMIT_SWITCH_PORT);
+pros::ADIAnalogIn AutonPot(AUTON_POT_PORT);
+
+/*
+	PISTON INITIALIZATIONS
+*/
+
+pros::ADIDigitalOut IntakeActuator(INTAKE_ACTUATOR_PORT);
+pros::ADIDigitalOut WingsActuator(WINGS_ACTUATOR_PORT);
+
+/*
+	LEMLIB DRIVE MOTOR INITIALIZATIONS
+*/
+
+pros::Motor drive_lb(DRIVE_LB_PORT, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor drive_lm(DRIVE_LM_PORT, pros::E_MOTOR_GEARSET_06, true);
+pros::Motor drive_lf(DRIVE_LF_PORT, pros::E_MOTOR_GEARSET_06, true);
+
+pros::Motor drive_rb(DRIVE_RB_PORT, pros::E_MOTOR_GEARSET_06, false);
+pros::Motor drive_rm(DRIVE_RM_PORT, pros::E_MOTOR_GEARSET_06, false);
+pros::Motor drive_rf(DRIVE_RF_PORT, pros::E_MOTOR_GEARSET_06, false);
+
+/*
+	LEMLIB DRIVE MOTOR GROUP INITIALIZATIONS
+*/
+
+pros::MotorGroup drive_left({drive_lb, drive_lm, drive_lf});
+pros::MotorGroup drive_right({drive_rb, drive_rm, drive_rf});
+
+/*
+	LEMLIB DRIVE IMU INITIALIZATION
+*/
+
+pros::Imu inertial_sensor(IMU_PORT);
+
+/*
+	LEMLIB DRIVE Drivetrain INITIALIZATION
+*/
+
+lemlib::Drivetrain drivetrain {
+    &drive_left, // left drivetrain motors
+    &drive_right, // right drivetrain motors
+    11, // track width
+    3.25, // wheel diameter // 3.175
+    360, // wheel rpm
+	10 // chase power
+};
+
+/*
+	LEMLIB DRIVE OdomSensors INITIALIZATION
+*/
+
+lemlib::OdomSensors sensors {
+    nullptr, // vertical tracking wheel 1
+    nullptr, // vertical tracking wheel 2
+    nullptr, // horizontal tracking wheel 1
+    nullptr, // we don't have a second tracking wheel, so we set it to nullptr
+    &inertial_sensor // inertial sensor
+};
+
+/*
+	LEMLIB DRIVE LATERAL_PID (forward/backward) INITIALIZATION
+*/
+
+lemlib::ControllerSettings lateralPIDController {
+    8, // kP
+    0, // kI
+	30, // kD
+	0, // antiWindUp ???
+    1, // smallErrorRange
+    100, // smallErrorTimeout
+    3, // largeErrorRange
+    500, // largeErrorTimeout
+    5 // slew rate
+};
+
+/*
+	LEMLIB DRIVE ANGULAR_PID (left/right) INITIALIZATION
+*/
+ 
+lemlib::ControllerSettings angularPIDController {
+    4.2, // kP
+	0, // kI
+    40, // kD
+	0, // antiWindUp ???
+    3, // smallErrorRange
+    100, // smallErrorTimeout
+    10, // largeErrorRange
+    500, // largeErrorTimeout
+    40 // slew rate
+};
+
+/*
+	LEMLIB DRIVE CHASSIS CONSTRUCTOR INITIALIZATION
+*/
+
+lemlib::Chassis chassis(drivetrain, lateralPIDController, angularPIDController, sensors);
+
+
 
 /**
  * A callback function for LLEMU's center button.
@@ -79,6 +243,9 @@ void opcontrol() {
 	pros::Motor right_mtr(2);
 
 	while (true) {
+
+		chassis.arcade(127, 127, 0.0);
+
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
 		                 (pros::lcd::read_buttons() & LCD_BTN_RIGHT) >> 0);
