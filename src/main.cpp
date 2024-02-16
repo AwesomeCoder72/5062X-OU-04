@@ -1,5 +1,19 @@
+/*
+	API INCLUDES
+*/
+
 #include "main.h"
 #include "lemlib/api.hpp"
+
+/*
+	USER-MADE INCLUDES
+*/
+
+#include "catapult.hpp"
+#include "autons.hpp"
+#include "intake.hpp"
+#include "pistons.hpp"
+
 
 /*
 	MOTOR PORT DEFINITIONS
@@ -188,6 +202,9 @@ void on_center_button() {
  */
 void initialize() {
 	pros::lcd::initialize();
+
+	chassis.calibrate();
+
 	pros::lcd::set_text(1, "Hello PROS User!");
 
 	pros::lcd::register_btn1_cb(on_center_button);
@@ -222,7 +239,13 @@ void competition_initialize() {}
  * will be stopped. Re-enabling the robot will restart the task, not re-start it
  * from where it left off.
  */
-void autonomous() {}
+
+ASSET(test1_txt);
+
+void autonomous() {
+    chassis.setPose(-50, -56, 240);
+	skills();
+}
 
 /**
  * Runs the operator control code. This function will be started in its own task
@@ -237,6 +260,10 @@ void autonomous() {}
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
+
+int match_load_speed = 85;
+
+
 void opcontrol() {
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::Motor left_mtr(1);
@@ -245,6 +272,9 @@ void opcontrol() {
 	while (true) {
 
 		chassis.arcade(127, 127, 0.0);
+
+		spin_cata_driver(controller.get_digital(DIGITAL_R1), match_load_speed);
+
 
 		pros::lcd::print(0, "%d %d %d", (pros::lcd::read_buttons() & LCD_BTN_LEFT) >> 2,
 		                 (pros::lcd::read_buttons() & LCD_BTN_CENTER) >> 1,
