@@ -19,7 +19,9 @@
 	MOTOR PORT DEFINITIONS
 */
 
-#define CATA_MOTOR_PORT 2
+#define CATA_5_5W_MOTOR_PORT 1
+#define CATA_11W_MOTOR_PORT 3
+
 #define INTAKE_MOTOR_PORT 12
 
 #define DRIVE_LB_PORT 6
@@ -35,6 +37,12 @@
 */
 
 #define IMU_PORT 18
+
+/*
+	SMART SENSOR PORT DEFINTIONS
+*/
+
+#define CATA_DISTANCE_SENSOR_PORT 20
 
 /*
 	DIGITAL PORT DEFINITIONS
@@ -71,7 +79,11 @@ pros::Controller controller (pros::E_CONTROLLER_MASTER);
 	MOTOR INITIALIZATIONS
 */
 
-pros::Motor Catapult(CATA_MOTOR_PORT, MOTOR_GEARSET_36, true);
+pros::Motor Catapult_5_5W(CATA_5_5W_MOTOR_PORT, MOTOR_GEARSET_18, false);
+pros::Motor Catapult_11W(CATA_11W_MOTOR_PORT, MOTOR_GEARSET_18, true);
+
+pros::MotorGroup Catapult({Catapult_5_5W, Catapult_11W});
+
 pros::Motor Intake(INTAKE_MOTOR_PORT, MOTOR_GEARSET_6, true);
 
 /*
@@ -80,6 +92,7 @@ pros::Motor Intake(INTAKE_MOTOR_PORT, MOTOR_GEARSET_6, true);
 
 pros::ADIDigitalIn CataLimit(CATA_LIMIT_SWITCH_PORT);
 pros::ADIAnalogIn AutonPot(AUTON_POT_PORT);
+pros::Distance CataDistance(CATA_DISTANCE_SENSOR_PORT);
 
 /*
 	PISTON INITIALIZATIONS
@@ -176,6 +189,11 @@ lemlib::ControllerSettings angularPIDController {
 
 lemlib::Chassis chassis(drivetrain, lateralPIDController, angularPIDController, sensors);
 
+/*
+	CATAPULT CONFIG
+*/
+
+int cata_distance_away_to_shoot = 30;
 
 
 /**
@@ -205,9 +223,8 @@ void initialize() {
 
 	chassis.calibrate();
 
-	pros::lcd::set_text(1, "Hello PROS User!");
 
-	pros::lcd::register_btn1_cb(on_center_button);
+	// pros::Task CataTask(cata_task_function);
 }
 
 /**
@@ -261,7 +278,7 @@ void autonomous() {
  * task, not resume it from where it left off.
  */
 
-int match_load_speed = 85;
+int match_load_speed = 200;
 
 
 void opcontrol() {
