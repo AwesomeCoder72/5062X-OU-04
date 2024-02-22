@@ -17,7 +17,7 @@ void skills() {
 
     chassis.turnTo(0, -59, 1500, true); // turn to move to center
 
-    chassis.moveToPose(40, -61, 90, 1500, {false, 0, 0.6, 127, 50, 0}); // move into offensive zone
+    // chassis.moveToPose(40, -61, 90, 1500, {false, 0, 0.6, 127, 50, 0}); // move into offensive zone
 
     chassis.turnTo(52.5, -44, 600, true); // turn to diagonal
 
